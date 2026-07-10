@@ -1,0 +1,11 @@
+node_modules/
+app/bundled/
+
+# Cloudflare build output & local wrangler state
+dist/
+.wrangler/
+
+# Local secrets
+.env
+.env.local
+.dev.vars
