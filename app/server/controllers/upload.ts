@@ -1,12 +1,13 @@
 /**
- * Upload / download URL issuance.
+ * Upload / download.
  *
- * `POST /upload-url` — for any authenticated id.kbn.one user. Records the
- * browser `Origin` host into the object key and as a *signed* `x-amz-meta-*`
- * header, then returns a short-lived presigned PUT the browser sends the file
- * to directly.
+ * `POST /upload?filename=…` — for any authenticated id.kbn.one user. The file
+ * is the raw request body; the browser `Origin` host and the user id are
+ * recorded in R2 custom metadata (and the origin/date in the object key). The
+ * bytes stream straight through the Worker into R2 via the binding — no
+ * buffering, so large files (up to the Worker request-body limit) are fine.
  *
- * `GET /download-url?key=…` — a short-lived presigned GET for a stored object.
+ * `GET /download?key=…` — streams a stored object back (authenticated).
  */
 
 import type { RequestContext } from "@remix-run/fetch-router";
@@ -14,8 +15,11 @@ import type { RequestContext } from "@remix-run/fetch-router";
 import { CurrentUser } from "../middleware/auth.ts";
 import { requestOriginHost } from "../lib/origin.ts";
 import { buildObjectKey } from "../lib/object_key.ts";
-import { presignGet, presignPut } from "../lib/r2.ts";
+import { getBucket } from "../lib/bucket.ts";
+import { putObject } from "../lib/objects.ts";
 
+// Guard rail; the platform enforces its own request-body cap too.
+const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 const MAX_FILENAME = 200;
 
 function jsonError(status: number, error: string): Response {
@@ -26,33 +30,47 @@ function jsonError(status: number, error: string): Response {
 }
 
 export const uploadController = {
-  async uploadUrl(context: RequestContext) {
+  async upload(context: RequestContext) {
     const user = context.get(CurrentUser)!;
-    const body = await context.request.json().catch(() => null) as
-      | { filename?: unknown; contentType?: unknown }
-      | null;
+    const request = context.request;
+    if (!request.body) return jsonError(400, "request body is required");
 
-    const filename = typeof body?.filename === "string"
-      ? body.filename.slice(0, MAX_FILENAME)
-      : undefined;
-    const contentType = typeof body?.contentType === "string"
-      ? body.contentType
-      : undefined;
+    const contentLength = Number(request.headers.get("content-length"));
+    if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_BYTES) {
+      return jsonError(413, "file too large");
+    }
 
-    const originHost = requestOriginHost(context.request);
+    const params = new URL(request.url).searchParams;
+    const rawName = params.get("filename");
+    const filename = rawName ? rawName.slice(0, MAX_FILENAME) : undefined;
+    const contentType = request.headers.get("content-type") ?? undefined;
+
+    const originHost = requestOriginHost(request);
     const key = buildObjectKey({ originHost, filename, at: new Date() });
 
-    const metadata: Record<string, string> = { "user-id": user.id };
-    if (originHost) metadata["upload-origin"] = originHost;
+    const customMetadata: Record<string, string> = { "user-id": user.id };
+    if (originHost) customMetadata["upload-origin"] = originHost;
 
-    const { url, headers } = await presignPut({ key, contentType, metadata });
-    return Response.json({ key, url, method: "PUT", headers });
+    await putObject(getBucket(), {
+      key,
+      body: request.body,
+      contentType,
+      customMetadata,
+    });
+
+    return Response.json({ key });
   },
 
-  async downloadUrl(context: RequestContext) {
+  async download(context: RequestContext) {
     const key = new URL(context.request.url).searchParams.get("key");
     if (!key) return jsonError(400, "key is required");
-    const url = await presignGet({ key });
-    return Response.json({ url });
+    const obj = await getBucket().get(key);
+    if (!obj) return jsonError(404, "not found");
+    return new Response(obj.body, {
+      headers: {
+        "content-type": obj.httpMetadata?.contentType ??
+          "application/octet-stream",
+      },
+    });
   },
 };

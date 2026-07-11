@@ -1,7 +1,7 @@
 /**
  * Cloudflare Workers build. Produces everything `wrangler deploy` needs:
  *
- * - `dist/worker.js` — the server, bundled from `app/server/router.ts` with
+ * - `dist/worker.js` — the server, bundled from `app/server/worker.ts` with
  *   `Deno.bundle`. Deno resolves all jsr/npm/workspace specifiers (which
  *   wrangler/esbuild cannot), inlining them into a single ESM file. Only
  *   `node:*` / `cloudflare:*` builtins are left external; `wrangler.jsonc`
@@ -9,8 +9,8 @@
  * - `dist/public/` — static assets (bundled client JS + `app/static`), served
  *   by the Workers `ASSETS` binding.
  *
- * The router's default export is a Web fetch handler, so it doubles as the
- * Workers module entry — no separate worker wrapper.
+ * The entry is `worker.ts` (not `router.ts`) because the R2 binding is only
+ * available on the `fetch(request, env)` argument.
  *
  * Run via `deno task build:cf`.
  */
@@ -38,7 +38,7 @@ async function copyAssets() {
 async function bundleWorker() {
   await Deno.mkdir(DIST, { recursive: true });
   const result = await Deno.bundle({
-    entrypoints: [import.meta.resolve("../server/router.ts")],
+    entrypoints: [import.meta.resolve("../server/worker.ts")],
     outputDir: new URL(".", DIST).pathname,
     platform: "browser",
     format: "esm",
@@ -51,13 +51,6 @@ async function bundleWorker() {
     console.error("[build:cf] worker bundle failed", result);
     throw new Error("worker bundle failed");
   }
-  // Deno.bundle names the output after the entry (router.js); wrangler expects
-  // dist/worker.js.
-  await Deno.rename(new URL("router.js", DIST), new URL("worker.js", DIST));
-  await Deno.rename(
-    new URL("router.js.map", DIST),
-    new URL("worker.js.map", DIST),
-  ).catch(() => {});
 }
 
 if (import.meta.main) {

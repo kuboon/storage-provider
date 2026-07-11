@@ -15,20 +15,14 @@
     "@remix-run/fetch-router": "npm:@remix-run/fetch-router@^0.20.0",
     "@remix-run/cors-middleware": "npm:@remix-run/cors-middleware@^0.1.6",
     "@remix-run/static-middleware": "npm:@remix-run/static-middleware@^0.4.12",
-    "jose": "npm:jose@^6.1.0",
-    "aws4fetch": "npm:aws4fetch@^1.0.20"
+    "jose": "npm:jose@^6.1.0"
   },
   "permissions": {
     "default": {
       "env": [
         "IDP_ORIGIN",
         "STORAGE_ORIGIN",
-        "SYSTEM_ADMIN_USER_IDS",
-        "R2_ACCOUNT_ID",
-        "R2_ACCESS_KEY_ID",
-        "R2_SECRET_ACCESS_KEY",
-        "R2_BUCKET",
-        "R2_S3_ENDPOINT"
+        "SYSTEM_ADMIN_USER_IDS"
       ],
       "read": ["../bundled", "../static"],
       "net": true

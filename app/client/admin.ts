@@ -17,7 +17,9 @@ interface AdminConfig {
 interface StoredObject {
   key: string;
   size: number;
-  lastModified: string;
+  uploaded: string;
+  uploadOrigin?: string;
+  userId?: string;
 }
 
 function cfg(): AdminConfig {
@@ -110,7 +112,7 @@ function renderRows(objects: StoredObject[]): void {
   const tbody = $("rows");
   tbody.replaceChildren();
   for (const o of objects) {
-    const { origin, date } = describeKey(o.key);
+    const fromKey = describeKey(o.key);
     const tr = document.createElement("tr");
 
     const add = (text: string, cls?: string) => {
@@ -119,8 +121,8 @@ function renderRows(objects: StoredObject[]): void {
       if (cls) td.className = cls;
       tr.appendChild(td);
     };
-    add(origin);
-    add(date);
+    add(o.uploadOrigin ?? fromKey.origin);
+    add(o.uploaded ? o.uploaded.slice(0, 10) : fromKey.date);
     add(o.key, "key");
     add(humanSize(o.size));
 

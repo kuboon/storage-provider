@@ -3,18 +3,14 @@
  *
  * Getters defer env reads until first access (via {@link getEnv}), so merely
  * importing this module needs no `--allow-env` and works under both Deno and
- * Cloudflare Workers.
+ * Cloudflare Workers. The R2 bucket is a binding, not an env var — see
+ * `lib/bucket.ts`.
  *
- * | Env var                | Default                    | Used by                       |
- * | ---------------------- | -------------------------- | ----------------------------- |
- * | `IDP_ORIGIN`           | `https://id.kbn.one`       | JWKS URL + expected `iss`     |
- * | `STORAGE_ORIGIN`       | (request origin)           | admin-login `redirect_uri`    |
- * | `SYSTEM_ADMIN_USER_IDS`| (unset → admin closed)     | admin gate                    |
- * | `R2_ACCOUNT_ID`        | (required for R2)          | S3 endpoint host              |
- * | `R2_ACCESS_KEY_ID`     | (required for R2)          | SigV4 signing                 |
- * | `R2_SECRET_ACCESS_KEY` | (required for R2)          | SigV4 signing                 |
- * | `R2_BUCKET`            | (required for R2)          | object path                   |
- * | `R2_S3_ENDPOINT`       | `https://<acct>.r2.cloudflarestorage.com` | override endpoint |
+ * | Env var                 | Default              | Used by                   |
+ * | ----------------------- | -------------------- | ------------------------- |
+ * | `IDP_ORIGIN`            | `https://id.kbn.one` | JWKS URL + expected `iss` |
+ * | `STORAGE_ORIGIN`        | (request origin)     | admin-login `redirect_uri`|
+ * | `SYSTEM_ADMIN_USER_IDS` | (unset → admin closed)| admin gate               |
  */
 
 import { getEnv } from "./env.ts";
@@ -32,27 +28,6 @@ export const config = {
       .split(",")
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
-  },
-  get r2AccountId(): string | undefined {
-    return getEnv("R2_ACCOUNT_ID");
-  },
-  get r2AccessKeyId(): string | undefined {
-    return getEnv("R2_ACCESS_KEY_ID");
-  },
-  get r2SecretAccessKey(): string | undefined {
-    return getEnv("R2_SECRET_ACCESS_KEY");
-  },
-  get r2Bucket(): string | undefined {
-    return getEnv("R2_BUCKET");
-  },
-  /**
-   * R2 S3-compatible endpoint. Defaults to the account-scoped host; override
-   * (e.g. for a jurisdiction-specific endpoint) with `R2_S3_ENDPOINT`.
-   */
-  get r2Endpoint(): string {
-    const explicit = getEnv("R2_S3_ENDPOINT");
-    if (explicit) return explicit.replace(/\/+$/, "");
-    return `https://${this.r2AccountId}.r2.cloudflarestorage.com`;
   },
 };
 

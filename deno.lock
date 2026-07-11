@@ -9,7 +9,6 @@
     "npm:@remix-run/cors-middleware@~0.1.6": "0.1.7",
     "npm:@remix-run/fetch-router@0.20": "0.20.1",
     "npm:@remix-run/static-middleware@~0.4.12": "0.4.13",
-    "npm:aws4fetch@^1.0.20": "1.0.20",
     "npm:jose@^6.1.0": "6.2.3"
   },
   "jsr": {
@@ -92,9 +91,6 @@
         "@remix-run/response"
       ]
     },
-    "aws4fetch@1.0.20": {
-      "integrity": "sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g=="
-    },
     "jose@6.2.3": {
       "integrity": "sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw=="
     }
@@ -115,7 +111,6 @@
           "npm:@remix-run/cors-middleware@~0.1.6",
           "npm:@remix-run/fetch-router@0.20",
           "npm:@remix-run/static-middleware@~0.4.12",
-          "npm:aws4fetch@^1.0.20",
           "npm:jose@^6.1.0"
         ]
       }

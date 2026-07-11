@@ -6,8 +6,8 @@ export const routes = route({
 
   // Authenticated user endpoints (any id.kbn.one user).
   uploads: route({
-    uploadUrl: post("/upload-url"),
-    downloadUrl: get("/download-url"),
+    upload: post("/upload"),
+    download: get("/download"),
   }),
 
   // Object management (system admin only).

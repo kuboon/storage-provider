@@ -11,7 +11,7 @@
     "cf:dev": "deno task build && wrangler dev",
     "cf:deploy": "deno task build:cf && wrangler deploy",
     "test": "deno test -P",
-    "check": "deno lint && deno fmt --check && deno check app/server/router.ts app/client/admin.ts app/bundler/cf.ts"
+    "check": "deno lint && deno fmt --check && deno check app/server/worker.ts app/client/admin.ts app/bundler/cf.ts"
   },
   "nodeModulesDir": "auto",
   "unstable": ["bundle"],

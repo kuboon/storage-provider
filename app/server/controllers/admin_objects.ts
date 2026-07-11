@@ -8,9 +8,8 @@
 
 import type { RequestContext } from "@remix-run/fetch-router";
 
-import { deleteObject, listObjects, type R2Object } from "../lib/r2.ts";
-
-const DAY_MS = 86_400_000;
+import { getBucket } from "../lib/bucket.ts";
+import { deleteObject, listObjects, pruneObjects } from "../lib/objects.ts";
 
 function jsonError(status: number, error: string): Response {
   return new Response(JSON.stringify({ error }), {
@@ -19,29 +18,23 @@ function jsonError(status: number, error: string): Response {
   });
 }
 
-function newestFirst(a: R2Object, b: R2Object): number {
-  return Date.parse(b.lastModified) - Date.parse(a.lastModified);
-}
-
 export const adminObjectsController = {
   async list(context: RequestContext) {
     const params = new URL(context.request.url).searchParams;
     const prefix = params.get("prefix") ?? undefined;
-    const olderThanDays = Number(params.get("olderThanDays"));
+    const olderThanDaysRaw = Number(params.get("olderThanDays"));
+    const olderThanDays = Number.isFinite(olderThanDaysRaw)
+      ? olderThanDaysRaw
+      : undefined;
 
-    let objects = await listObjects({ prefix });
-    if (Number.isFinite(olderThanDays) && olderThanDays > 0) {
-      const cutoff = Date.now() - olderThanDays * DAY_MS;
-      objects = objects.filter((o) => Date.parse(o.lastModified) < cutoff);
-    }
-    objects.sort(newestFirst);
+    const objects = await listObjects(getBucket(), { prefix, olderThanDays });
     return Response.json({ objects });
   },
 
   async remove(context: RequestContext) {
     const key = new URL(context.request.url).searchParams.get("key");
     if (!key) return jsonError(400, "key is required");
-    await deleteObject(key);
+    await deleteObject(getBucket(), key);
     return Response.json({ ok: true, key });
   },
 
@@ -55,15 +48,10 @@ export const adminObjectsController = {
     }
     const prefix = typeof body?.prefix === "string" ? body.prefix : undefined;
 
-    const cutoff = Date.now() - days * DAY_MS;
-    const objects = await listObjects({ prefix });
-    const stale = objects.filter((o) => Date.parse(o.lastModified) < cutoff);
-
-    const deleted: string[] = [];
-    for (const o of stale) {
-      await deleteObject(o.key);
-      deleted.push(o.key);
-    }
+    const deleted = await pruneObjects(getBucket(), {
+      olderThanDays: days,
+      prefix,
+    });
     return Response.json({ deleted: deleted.length, keys: deleted });
   },
 };
