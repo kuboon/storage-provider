@@ -1,0 +1,31 @@
+{
+  "tasks": {
+    "bundle": "deno task --cwd ../bundler build",
+    "dev": "deno task bundle && deno serve -P --watch ./router.ts",
+    "serve": "deno serve -P ./router.ts"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.unstable", "dom"]
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@std/encoding": "jsr:@std/encoding@^1.0.10",
+    "@std/ulid": "jsr:@std/ulid@^1.0.0",
+    "@kuboon/dpop": "jsr:@kuboon/dpop@^0.1.2",
+    "@remix-run/fetch-router": "npm:@remix-run/fetch-router@^0.20.0",
+    "@remix-run/cors-middleware": "npm:@remix-run/cors-middleware@^0.1.6",
+    "@remix-run/static-middleware": "npm:@remix-run/static-middleware@^0.4.12",
+    "jose": "npm:jose@^6.1.0"
+  },
+  "permissions": {
+    "default": {
+      "env": [
+        "IDP_ORIGIN",
+        "STORAGE_ORIGIN",
+        "SYSTEM_ADMIN_USER_IDS"
+      ],
+      "read": ["../bundled", "../static"],
+      "net": true
+    }
+  }
+}

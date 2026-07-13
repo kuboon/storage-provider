@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "storage-provider",
+  // Pre-bundled by `deno task build:cf` (Deno resolves jsr/npm/workspace
+  // specifiers wrangler/esbuild cannot). Entry is app/server/worker.ts, which
+  // receives the R2 binding + env and delegates to the Remix fetch-router.
+  "main": "dist/worker.js",
+  "compatibility_date": "2025-09-23",
+  // Satisfies leftover node:* builtins pulled in by jose.
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static assets: bundled client JS + app/static, merged into dist/public by
+  // the build. Served before the worker; unmatched paths fall through.
+  "assets": {
+    "directory": "./dist/public",
+    "binding": "ASSETS"
+  },
+
+  // R2 bucket binding. Create the bucket first:
+  //   wrangler r2 bucket create kbn-storage
+  // then set bucket_name below. No access keys needed — the binding is
+  // authenticated by the platform.
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "kbn-storage"
+    }
+  ],
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Non-secret defaults. Set the rest with `wrangler secret put <NAME>`:
+  //   SYSTEM_ADMIN_USER_IDS, STORAGE_ORIGIN (this Worker's public origin).
+  "vars": {
+    "IDP_ORIGIN": "https://id.kbn.one"
+  }
+}

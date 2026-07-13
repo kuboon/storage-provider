@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "deno.ns"]
+  },
+  "imports": {
+    "@kuboon/dpop": "jsr:@kuboon/dpop@^0.1.2"
+  }
+}

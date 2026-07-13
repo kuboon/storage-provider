@@ -1,0 +1,119 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@kuboon/dpop@~0.1.2": "0.1.2",
+    "jsr:@std/assert@^1.0.19": "1.0.19",
+    "jsr:@std/encoding@1.0.10": "1.0.10",
+    "jsr:@std/internal@^1.0.12": "1.0.14",
+    "jsr:@std/ulid@1": "1.0.0",
+    "npm:@remix-run/cors-middleware@~0.1.6": "0.1.7",
+    "npm:@remix-run/fetch-router@0.20": "0.20.1",
+    "npm:@remix-run/static-middleware@~0.4.12": "0.4.13",
+    "npm:jose@^6.1.0": "6.2.3"
+  },
+  "jsr": {
+    "@kuboon/dpop@0.1.2": {
+      "integrity": "30de96c140e7b23e2ebee0145c75adc9dfe04ecbe288546348bd4b619b733add",
+      "dependencies": [
+        "jsr:@std/encoding"
+      ]
+    },
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/encoding@1.0.10": {
+      "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
+    },
+    "@std/internal@1.0.14": {
+      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
+    },
+    "@std/ulid@1.0.0": {
+      "integrity": "d41c3d27a907714413649fee864b7cde8d42ee68437d22b79d5de4f81d808780"
+    }
+  },
+  "npm": {
+    "@remix-run/cors-middleware@0.1.7": {
+      "integrity": "sha512-zbjwCFDwtHDSjyt6sgVVPkFiFfSkmkYPT74nrHClbF+pZx1ra+q93Rpcthbok0cv4IH1f0cagLbf8Jh+IEWNwA==",
+      "dependencies": [
+        "@remix-run/fetch-router",
+        "@remix-run/headers"
+      ]
+    },
+    "@remix-run/fetch-router@0.20.1": {
+      "integrity": "sha512-vxlIu4LHY5KyqOdlXFjJeUefUJxgc7499/cSsBl2bzhQnU5DayPHN/dklBOiG+U7GIYQMmObAinmubkwzaXyuw==",
+      "dependencies": [
+        "@remix-run/route-pattern"
+      ]
+    },
+    "@remix-run/fs@0.4.6": {
+      "integrity": "sha512-xxvixX/WyufRr6YrjPLGXvyE5Lzb5G/Y4tygk6McJ6nr59f3hO9w3aVc/lvsVPD7liYfM1EyMnmd4qIByJq9bg==",
+      "dependencies": [
+        "@remix-run/lazy-file",
+        "@remix-run/mime"
+      ]
+    },
+    "@remix-run/headers@0.21.1": {
+      "integrity": "sha512-DRhRveigepAQDUIi0MrOFhpcl3/KTv/fkpIhulv7Asv1pUwM8RpY2ENjdI8lfii6Z3MEsWtYhGt6If8bi6bYpQ=="
+    },
+    "@remix-run/html-template@0.3.1": {
+      "integrity": "sha512-4yhaBtfh1iVC1razTr+ehu1xmKia0zvE4GWQ6JF2IRiA3kmw+DlrdNFEFqx5Wn1eXAM0vxxcJLdLD7e0XMzH5A=="
+    },
+    "@remix-run/lazy-file@5.0.6": {
+      "integrity": "sha512-jIeeqkqR+AgTEKls5WMPbiGyXhrkAJugN4ot/K9X74CLzO9uMbcFDKef7CWCfjN1s+551u+5LxNWLJx1nztuVg==",
+      "dependencies": [
+        "@remix-run/mime"
+      ]
+    },
+    "@remix-run/mime@0.4.2": {
+      "integrity": "sha512-KpZZxBYIrLsvUtt2ZdwK+E2ClVmyvW11Nej6fPgwJpohBMpbCHtR78wtCTv0vqvK5ckLZ7ks2q4pV5dMYFypiA=="
+    },
+    "@remix-run/response@0.3.7": {
+      "integrity": "sha512-f3VWP4NNxgBt+oJfRbgqLYaMXonMdeHhbzAyLfqMzZAwe/ukUwwGoTtER2xlRPDxFlr9Tqa3NFC8PrSmp+rfmA==",
+      "dependencies": [
+        "@remix-run/headers",
+        "@remix-run/html-template",
+        "@remix-run/mime"
+      ]
+    },
+    "@remix-run/route-pattern@0.23.0": {
+      "integrity": "sha512-8eZfG9owfdvC1OqWemjyIqbFTjWbKTW8RrcbppXrnv1GHMIpFOQx9Ly6F1OXNM03aK1c923JypacoRjamyfVEw=="
+    },
+    "@remix-run/static-middleware@0.4.13": {
+      "integrity": "sha512-32oI2hbVR+GN/sduxOZSY1WNaEasKDm7X7o79eBGG5E78dV5mi0ijGLldHfAEazyRQyqeYzvG292RWUfkFJetA==",
+      "dependencies": [
+        "@remix-run/fetch-router",
+        "@remix-run/fs",
+        "@remix-run/html-template",
+        "@remix-run/mime",
+        "@remix-run/response"
+      ]
+    },
+    "jose@6.2.3": {
+      "integrity": "sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw=="
+    }
+  },
+  "workspace": {
+    "members": {
+      "app/client": {
+        "dependencies": [
+          "jsr:@kuboon/dpop@~0.1.2"
+        ]
+      },
+      "app/server": {
+        "dependencies": [
+          "jsr:@kuboon/dpop@~0.1.2",
+          "jsr:@std/assert@^1.0.19",
+          "jsr:@std/encoding@^1.0.10",
+          "jsr:@std/ulid@1",
+          "npm:@remix-run/cors-middleware@~0.1.6",
+          "npm:@remix-run/fetch-router@0.20",
+          "npm:@remix-run/static-middleware@~0.4.12",
+          "npm:jose@^6.1.0"
+        ]
+      }
+    }
+  }
+}

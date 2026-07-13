@@ -1,0 +1,24 @@
+{
+  "workspace": [
+    "./app/server",
+    "./app/client",
+    "./app/bundler"
+  ],
+  "tasks": {
+    "dev": "deno task --cwd app/server dev",
+    "build": "deno task --cwd app/bundler build",
+    "build:cf": "deno task --cwd app/bundler build:cf",
+    "cf:dev": "deno task build && wrangler dev",
+    "cf:deploy": "deno task build:cf && wrangler deploy",
+    "test": "deno test -P",
+    "check": "deno lint && deno fmt --check && deno check app/server/worker.ts app/client/admin.ts app/bundler/cf.ts"
+  },
+  "nodeModulesDir": "auto",
+  "unstable": ["bundle"],
+  "fmt": {
+    "exclude": ["app/bundled/", "dist/"]
+  },
+  "lint": {
+    "exclude": ["app/bundled/", "dist/"]
+  }
+}

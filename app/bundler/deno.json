@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "build": "deno run -A ./mod.ts",
+    "build:cf": "deno run -A ./cf.ts"
+  },
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.unstable"]
+  }
+}
