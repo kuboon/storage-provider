@@ -59,14 +59,15 @@ id.kbn.one で認証したユーザが **Cloudflare R2**
 
 ## 環境変数 / バインディング
 
-| 種別       | 名前                    | 既定                 | 用途                                            |
-| ---------- | ----------------------- | -------------------- | ----------------------------------------------- |
-| binding    | `BUCKET`                | —                    | R2 バケット（`wrangler.jsonc` の `r2_buckets`） |
-| var        | `IDP_ORIGIN`            | `https://id.kbn.one` | JWKS URL・期待する `iss`                        |
-| var/secret | `STORAGE_ORIGIN`        | リクエスト origin    | 管理ログインの `redirect_uri`                   |
-| secret     | `SYSTEM_ADMIN_USER_IDS` | (未設定=管理不可)    | 管理権限を持つ userId のカンマ区切り            |
+| 種別    | 名前                    | 既定                 | 用途                                            |
+| ------- | ----------------------- | -------------------- | ----------------------------------------------- |
+| binding | `BUCKET`                | —                    | R2 バケット（`wrangler.jsonc` の `r2_buckets`） |
+| var     | `IDP_ORIGIN`            | `https://id.kbn.one` | JWKS URL・期待する `iss`                        |
+| var     | `STORAGE_ORIGIN`        | リクエスト origin    | 管理ログインの `redirect_uri`                   |
+| var     | `SYSTEM_ADMIN_USER_IDS` | (未設定=管理不可)    | 管理権限を持つ userId のカンマ区切り            |
 
-**R2 access key は不要**（バインディングはプラットフォームが認証）。
+いずれも機密ではないので `wrangler.jsonc` の `vars` に置く（`wrangler secret`
+不要）。**R2 access key も不要**（バインディングはプラットフォームが認証）。
 
 ## ローカル開発
 
@@ -96,12 +97,12 @@ deno task build:cf                      # dist/worker.js + dist/public/
 wrangler deploy                         # もしくは deno task cf:deploy
 ```
 
-シークレット登録:
-
-```bash
-wrangler secret put SYSTEM_ADMIN_USER_IDS   # 例: user_abc,user_def
-wrangler secret put STORAGE_ORIGIN          # 例: https://storage.kbn.one
-```
+`IDP_ORIGIN` / `STORAGE_ORIGIN` / `SYSTEM_ADMIN_USER_IDS` は `wrangler.jsonc` の
+`vars` に記載済み（機密でないため secret にはしない）。`storage.kbn.one` の
+カスタムドメインは `routes` で設定しており、**kbn.one ゾーンが Cloudflare
+アカウントで active** であることが前提（未 active だとデプロイ時にルート作成で
+失敗するので、その場合は `routes` を外して `*.workers.dev` で配信し
+`STORAGE_ORIGIN` をその URL に合わせる）。
 
 CI は `.github/workflows/deploy.yml`（`cloudflare/wrangler-action`）。
 リポジトリに `secrets.CLOUDFLARE_API_TOKEN` と `vars.CLOUDFLARE_ACCOUNT_ID`
