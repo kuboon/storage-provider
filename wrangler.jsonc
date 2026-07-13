@@ -9,6 +9,17 @@
   // Satisfies leftover node:* builtins pulled in by jose.
   "compatibility_flags": ["nodejs_compat"],
 
+  // Custom domain. Requires the `kbn.one` zone to be active in this Cloudflare
+  // account; wrangler then provisions the DNS record + certificate on deploy.
+  // Remove this block to serve on *.workers.dev instead (and set STORAGE_ORIGIN
+  // to that URL).
+  "routes": [
+    {
+      "pattern": "storage.kbn.one",
+      "custom_domain": true
+    }
+  ],
+
   // Static assets: bundled client JS + app/static, merged into dist/public by
   // the build. Served before the worker; unmatched paths fall through.
   "assets": {
@@ -31,9 +42,12 @@
     "enabled": true
   },
 
-  // Non-secret defaults. Set the rest with `wrangler secret put <NAME>`:
-  //   SYSTEM_ADMIN_USER_IDS, STORAGE_ORIGIN (this Worker's public origin).
+  // Non-secret config. None of these are sensitive (an IdP origin, this
+  // Worker's own origin, and the admin user id allow-list), so they live here
+  // rather than as `wrangler secret`s.
   "vars": {
-    "IDP_ORIGIN": "https://id.kbn.one"
+    "IDP_ORIGIN": "https://id.kbn.one",
+    "STORAGE_ORIGIN": "https://storage.kbn.one",
+    "SYSTEM_ADMIN_USER_IDS": "7499d00d-fcff-4630-91a0-c034893c8d08"
   }
 }
