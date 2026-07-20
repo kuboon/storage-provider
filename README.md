@@ -33,26 +33,39 @@ id.kbn.one で認証したユーザが **Cloudflare R2**
 
 ## エンドポイント
 
-| メソッド | パス                                    | 認証              | 役割                                        |
-| -------- | --------------------------------------- | ----------------- | ------------------------------------------- |
-| GET      | `/admin`                                | 公開(HTML)        | 管理ページ（中の操作は下記で認可）          |
-| POST     | `/upload?filename=…`                    | id.kbn.one ユーザ | body=ファイル。R2 に保存し `{ key }` を返す |
-| GET      | `/download?key=…`                       | id.kbn.one ユーザ | オブジェクトをストリーム返却                |
-| GET      | `/admin/objects?prefix=&olderThanDays=` | system admin      | 一覧                                        |
-| DELETE   | `/admin/objects?key=`                   | system admin      | 単一削除                                    |
-| POST     | `/admin/objects/prune`                  | system admin      | `{olderThanDays, prefix?}` 一括削除         |
+| メソッド | パス                                    | 認証              | 役割                                                  |
+| -------- | --------------------------------------- | ----------------- | ----------------------------------------------------- |
+| GET      | `/admin`                                | 公開(HTML)        | 管理ページ（中の操作は下記で認可）                    |
+| POST     | `/upload?filename=…&expireDays=N`       | id.kbn.one ユーザ | body=ファイル。R2 に保存し `{ key, expireAt }` を返す |
+| GET      | `/download?key=…`                       | id.kbn.one ユーザ | オブジェクトをストリーム返却                          |
+| GET      | `/admin/objects?prefix=&olderThanDays=` | system admin      | 一覧                                                  |
+| DELETE   | `/admin/objects?key=`                   | system admin      | 単一削除                                              |
+| POST     | `/admin/objects/prune`                  | system admin      | `{olderThanDays, prefix?}` 一括削除                   |
 
 `POST /upload` は `Content-Type` にファイルの MIME、`?filename=`
-に元名を付ける。
+に元名を付ける。`?expireDays=N`（正の整数・最大 365）を付けると **N 日後に自動
+削除**される（`expire-at` を customMetadata に記録し、レスポンスの `expireAt` に
+ISO 時刻を返す）。省略時は無期限（例: スタンプは無期限、home portal の添付画像は
+`expireDays=7`）。削除は下記の cron が実行する。
+
+### 有効期限つき削除（cron）
+
+`wrangler.jsonc` の `triggers.crons`（既定: 毎日 03:17 UTC）で Worker の
+`scheduled` ハンドラが走り、`expire-at` を過ぎたオブジェクトを一括削除する
+（`app/server/lib/objects.ts` の `pruneExpired`）。`expire-at`
+の無いオブジェクト （スタンプなど）は対象外。ローカル（`deno serve`）では cron
+は動かないので、 `/admin` の「古いデータ削除」（`olderThanDays`
+基準）で代替できる。
 
 ## R2 に記録されるメタデータ
 
-| 保存先         | 名前            | 値                                                      |
-| -------------- | --------------- | ------------------------------------------------------- |
-| object key     | —               | `<originHost>/<yyyymmdd>/<ulid>-<safeName>`             |
-| customMetadata | `upload-origin` | アップロード元ホスト名（`Origin` ヘッダ由来・詐称不可） |
-| customMetadata | `user-id`       | id.kbn.one の userId                                    |
-| httpMetadata   | `content-type`  | ブラウザ指定 MIME                                       |
+| 保存先         | 名前            | 値                                                       |
+| -------------- | --------------- | -------------------------------------------------------- |
+| object key     | —               | `<originHost>/<yyyymmdd>/<ulid>-<safeName>`              |
+| customMetadata | `upload-origin` | アップロード元ホスト名（`Origin` ヘッダ由来・詐称不可）  |
+| customMetadata | `user-id`       | id.kbn.one の userId                                     |
+| customMetadata | `expire-at`     | 自動削除の予定時刻（ISO 8601・`?expireDays` 指定時のみ） |
+| httpMetadata   | `content-type`  | ブラウザ指定 MIME                                        |
 
 一覧は `env.BUCKET.list({ include: ["customMetadata"] })` で `upload-origin` /
 `user-id` / `uploaded`（日時）を取得。「古いデータ削除」は `uploaded` で判定。

@@ -3,7 +3,9 @@ import { assertEquals } from "@std/assert";
 import { MemoryBucket } from "./memory_bucket.ts";
 import {
   deleteObject,
+  EXPIRE_AT_KEY,
   listObjects,
+  pruneExpired,
   pruneObjects,
   putObject,
 } from "./objects.ts";
@@ -76,4 +78,49 @@ Deno.test("pruneObjects deletes only entries older than the cutoff", async () =>
 
   const remaining = (await listObjects(bucket)).map((o) => o.key).sort();
   assertEquals(remaining, ["fresh1", "fresh2"]);
+});
+
+Deno.test("listObjects surfaces the expire-at metadata", async () => {
+  const bucket = new MemoryBucket();
+  await putObject(bucket, {
+    key: "a.example/img",
+    body: null,
+    customMetadata: { [EXPIRE_AT_KEY]: "2026-07-27T00:00:00.000Z" },
+  });
+  const [obj] = await listObjects(bucket);
+  assertEquals(obj.expireAt, "2026-07-27T00:00:00.000Z");
+});
+
+Deno.test("pruneExpired deletes objects past expire-at, keeps the rest", async () => {
+  const bucket = new MemoryBucket();
+  const now = Date.parse("2026-07-20T00:00:00Z");
+  const iso = (ms: number) => new Date(ms).toISOString();
+
+  // Past expiry → deleted.
+  bucket.seed("expired", new Date(), {
+    [EXPIRE_AT_KEY]: iso(now - 1000),
+  });
+  // Future expiry → kept.
+  bucket.seed("live", new Date(), {
+    [EXPIRE_AT_KEY]: iso(now + 86_400_000),
+  });
+  // No expiry (e.g. a stamp) → never touched.
+  bucket.seed("permanent", new Date());
+  // Malformed expiry → left alone (fail safe: don't delete).
+  bucket.seed("garbage", new Date(), { [EXPIRE_AT_KEY]: "not-a-date" });
+
+  const deleted = await pruneExpired(bucket, now);
+  assertEquals(deleted, ["expired"]);
+
+  const remaining = (await listObjects(bucket)).map((o) => o.key).sort();
+  assertEquals(remaining, ["garbage", "live", "permanent"]);
+});
+
+Deno.test("pruneExpired treats expire-at exactly at now as expired", async () => {
+  const bucket = new MemoryBucket();
+  const now = Date.parse("2026-07-20T00:00:00Z");
+  bucket.seed("boundary", new Date(), {
+    [EXPIRE_AT_KEY]: new Date(now).toISOString(),
+  });
+  assertEquals(await pruneExpired(bucket, now), ["boundary"]);
 });
