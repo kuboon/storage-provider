@@ -16,11 +16,29 @@ import { CurrentUser } from "../middleware/auth.ts";
 import { requestOriginHost } from "../lib/origin.ts";
 import { buildObjectKey } from "../lib/object_key.ts";
 import { getBucket } from "../lib/bucket.ts";
-import { putObject } from "../lib/objects.ts";
+import { EXPIRE_AT_KEY, putObject } from "../lib/objects.ts";
 
 // Guard rail; the platform enforces its own request-body cap too.
 const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 const MAX_FILENAME = 200;
+const DAY_MS = 86_400_000;
+// Clamp on the caller-requested TTL: a positive whole number of days, capped
+// so a bad value can't pin an object effectively forever.
+const MAX_EXPIRE_DAYS = 365;
+
+/**
+ * Parse the optional `?expireDays=N` TTL into an absolute ISO expiry, or
+ * undefined when absent/invalid. The scheduled prune deletes the object once
+ * this time passes; omit it (as stamps do) to keep the object indefinitely.
+ */
+function expireAtFrom(params: URLSearchParams, at: Date): string | undefined {
+  const raw = params.get("expireDays");
+  if (raw == null) return undefined;
+  const days = Number(raw);
+  if (!Number.isFinite(days) || days <= 0) return undefined;
+  const clamped = Math.min(Math.floor(days), MAX_EXPIRE_DAYS);
+  return new Date(at.getTime() + clamped * DAY_MS).toISOString();
+}
 
 function jsonError(status: number, error: string): Response {
   return new Response(JSON.stringify({ error }), {
@@ -45,11 +63,14 @@ export const uploadController = {
     const filename = rawName ? rawName.slice(0, MAX_FILENAME) : undefined;
     const contentType = request.headers.get("content-type") ?? undefined;
 
+    const now = new Date();
     const originHost = requestOriginHost(request);
-    const key = buildObjectKey({ originHost, filename, at: new Date() });
+    const key = buildObjectKey({ originHost, filename, at: now });
+    const expireAt = expireAtFrom(params, now);
 
     const customMetadata: Record<string, string> = { "user-id": user.id };
     if (originHost) customMetadata["upload-origin"] = originHost;
+    if (expireAt) customMetadata[EXPIRE_AT_KEY] = expireAt;
 
     await putObject(getBucket(), {
       key,
@@ -58,7 +79,7 @@ export const uploadController = {
       customMetadata,
     });
 
-    return Response.json({ key });
+    return Response.json({ key, expireAt: expireAt ?? null });
   },
 
   async download(context: RequestContext) {

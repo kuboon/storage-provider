@@ -42,6 +42,15 @@
     "enabled": true
   },
 
+  // Scheduled deletion of expired objects. The worker's `scheduled` handler
+  // runs `pruneExpired`, deleting objects whose `expire-at` metadata has
+  // passed (set per-upload via `?expireDays=N`; e.g. home portal's attached
+  // images expire after 7 days). Runs daily; objects without an `expire-at`
+  // (stamps) are never touched.
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  },
+
   // Non-secret config. None of these are sensitive (an IdP origin, this
   // Worker's own origin, and the admin user id allow-list), so they live here
   // rather than as `wrangler secret`s.

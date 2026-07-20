@@ -13,7 +13,8 @@
  */
 
 import { setEnvOverrides } from "./env.ts";
-import { type Bucket, setBucket } from "./lib/bucket.ts";
+import { type Bucket, getBucket, setBucket } from "./lib/bucket.ts";
+import { pruneExpired } from "./lib/objects.ts";
 import router from "./router.ts";
 
 interface Env {
@@ -27,10 +28,27 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
+/** Cloudflare cron-trigger event (only the fields we read). */
+interface ScheduledEvent {
+  cron: string;
+  scheduledTime: number;
+}
+
 export default {
   fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     setEnvOverrides(env);
     setBucket(env.BUCKET);
     return router.fetch(request);
+  },
+
+  /**
+   * Cron trigger (see `wrangler.jsonc` → `triggers.crons`): sweep out objects
+   * whose `expire-at` TTL has passed. Objects without an `expire-at` (stamps,
+   * and anything uploaded without `?expireDays`) are never touched.
+   */
+  scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): void {
+    setEnvOverrides(env);
+    setBucket(env.BUCKET);
+    ctx.waitUntil(pruneExpired(getBucket()));
   },
 };

@@ -17,7 +17,12 @@ export interface ObjectWire {
   uploaded: string;
   uploadOrigin?: string;
   userId?: string;
+  /** ISO expiry (`expire-at` metadata); the scheduled prune deletes past it. */
+  expireAt?: string;
 }
+
+/** customMetadata key holding an object's scheduled-deletion time (ISO 8601). */
+export const EXPIRE_AT_KEY = "expire-at";
 
 /** Store an object, recording origin/user in custom metadata. */
 export async function putObject(bucket: Bucket, opts: {
@@ -73,6 +78,7 @@ export async function listObjects(bucket: Bucket, opts: {
       uploaded: o.uploaded.toISOString(),
       uploadOrigin: o.customMetadata?.["upload-origin"],
       userId: o.customMetadata?.["user-id"],
+      expireAt: o.customMetadata?.[EXPIRE_AT_KEY],
     }));
 }
 
@@ -92,8 +98,36 @@ export async function pruneObjects(bucket: Bucket, opts: {
     .filter((o) => o.uploaded.getTime() < cutoff)
     .map((o) => o.key);
 
-  for (let i = 0; i < stale.length; i += DELETE_BATCH) {
-    await bucket.delete(stale.slice(i, i + DELETE_BATCH));
+  return await deleteKeys(bucket, stale);
+}
+
+/**
+ * Delete every object whose `expire-at` metadata is at or before `now`
+ * (default: the current time). This is the per-object TTL the scheduled
+ * (cron) handler runs; objects without an `expire-at` (e.g. stamps) are never
+ * touched. Returns the deleted keys.
+ */
+export async function pruneExpired(
+  bucket: Bucket,
+  now: number = Date.now(),
+): Promise<string[]> {
+  const objects = await listAll(bucket);
+  const expired = objects
+    .filter((o) => {
+      const at = o.customMetadata?.[EXPIRE_AT_KEY];
+      if (!at) return false;
+      const t = Date.parse(at);
+      return Number.isFinite(t) && t <= now;
+    })
+    .map((o) => o.key);
+
+  return await deleteKeys(bucket, expired);
+}
+
+/** Delete keys in batches (R2 caps a bulk delete at 1000). Returns them. */
+async function deleteKeys(bucket: Bucket, keys: string[]): Promise<string[]> {
+  for (let i = 0; i < keys.length; i += DELETE_BATCH) {
+    await bucket.delete(keys.slice(i, i + DELETE_BATCH));
   }
-  return stale;
+  return keys;
 }
